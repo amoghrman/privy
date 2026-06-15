@@ -1,0 +1,19 @@
+# Meeting Copilot — local-first, Windows. Python 3.11+
+# Pinned loosely for an MVP; tighten later if needed.
+
+# --- Audio capture ---
+sounddevice>=0.4.6          # microphone
+PyAudioWPatch>=0.2.12.7     # WASAPI loopback (system audio) on Windows
+numpy>=1.24
+scipy>=1.10                 # high-quality resampling (resample_poly)
+webrtcvad-wheels>=2.0.14    # VAD gating (prebuilt wheels; imports as `webrtcvad`)
+
+# --- Speech to text (local) ---
+faster-whisper>=1.0.0       # int8 CTranslate2 Whisper, runs on-device
+
+# --- LLM (local, via Ollama HTTP @ localhost:11434) ---
+httpx>=0.27                 # streaming HTTP client for Ollama
+
+# --- Overlay UI + hotkey ---
+PySide6>=6.6
+pynput>=1.7.6               # global hotkey
