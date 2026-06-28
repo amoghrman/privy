@@ -51,10 +51,10 @@ WHISPER_LANGUAGE = "en"       # set None to autodetect (slower)
 WHISPER_BEAM_SIZE = 1         # greedy = fastest, fine for live partials
 
 # ─────────────────────────── LLM backend selection ───────────────────────────
-# "ollama" = 100% local (default, private). "groq" = cloud API for higher
-# accuracy/speed — NOTE: this sends the transcript off-device. Opt-in only.
-# Groq needs an API key in the GROQ_API_KEY environment variable (never commit it).
-INFERENCE_BACKEND = "ollama"           # "ollama" | "groq"
+# "ollama" = 100% local (default, private). "groq"/"nvidia" = cloud APIs for
+# higher accuracy/speed — NOTE: these send the transcript off-device. Opt-in.
+# Each cloud backend needs an API key in its env var (never commit keys).
+INFERENCE_BACKEND = "ollama"           # "ollama" | "groq" | "nvidia"
 
 # ─────────────────────────── LLM (Ollama, local) ───────────────────────────
 OLLAMA_HOST = "http://localhost:11434"
@@ -73,6 +73,16 @@ OLLAMA_TEMPERATURE = 0.3
 GROQ_API_BASE = "https://api.groq.com/openai/v1"
 GROQ_MODEL = "llama-3.3-70b-versatile" # large, accurate, still fast on Groq
 GROQ_API_KEY_ENV = "GROQ_API_KEY"      # read from this env var; never hard-code
+
+# ─────────────────────────── LLM (NVIDIA NIM / Nemotron, cloud — opt-in) ───────────
+# Free tier at build.nvidia.com (nvapi- key, 1000 credits, 40 req/min, no card).
+# OpenAI-compatible. Nemotron-3 options:
+#   nvidia/nemotron-3-nano-30b-a3b   (fast)
+#   nvidia/nemotron-3-super-120b-a12b (best accuracy)  ← default
+#   nvidia/nemotron-3-ultra-550b-a55b (largest)
+NVIDIA_API_BASE = "https://integrate.api.nvidia.com/v1"
+NVIDIA_MODEL = "nvidia/nemotron-3-super-120b-a12b"
+NVIDIA_API_KEY_ENV = "NVIDIA_API_KEY"  # read from this env var; never hard-code
 
 # ─────────────────────────── Context builder ───────────────────────────
 TRANSCRIPT_WINDOW_SECONDS = 90   # how much recent conversation to feed the LLM

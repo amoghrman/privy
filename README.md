@@ -38,7 +38,7 @@ overlay ◀─AnswerToken─ inference ◀─(system,user)─ context_builder
 | `copilot/transcriber.py` | faster-whisper, VAD-gated streaming partials |
 | `copilot/memory.py` | **`MemoryProvider` seam** + `NullMemoryProvider` |
 | `copilot/context_builder.py` | transcript window + `recall()` → prompt |
-| `copilot/inference.py` | **`InferenceProvider` seam**: Ollama (local) / Groq (cloud) |
+| `copilot/inference.py` | **`InferenceProvider` seam**: Ollama (local) / Groq / NVIDIA Nemotron (cloud) |
 | `copilot/overlay.py` | capture-excluded always-on-top UI |
 | `app.py` | wires it all together |
 
@@ -79,16 +79,30 @@ python app.py
 
 A **desktop shortcut** (“privy”) is created by `make_shortcut.ps1`.
 
-### Optional: Groq cloud backend (higher accuracy, opt-in)
+### Optional: cloud LLM backends (higher accuracy, opt-in)
 The local 1.5B model is fast but limited. For sharper answers you can route the
-**LLM** (not the audio/STT) to [Groq](https://console.groq.com)'s free API.
-⚠️ This sends the transcript off-device — opt-in by design.
+**LLM** (not the audio/STT) to a free cloud API. ⚠️ This sends the transcript
+off-device — opt-in by design. **STT stays 100% local either way.**
 
+**Groq** ([console.groq.com](https://console.groq.com)) — Llama 3.3 70B, very fast:
 ```powershell
 setx GROQ_API_KEY "gsk_your_key_here"     # restart shell after
-# then in config.py:  INFERENCE_BACKEND = "groq"
+# config.py:  INFERENCE_BACKEND = "groq"
 ```
-STT stays 100% local either way.
+
+**NVIDIA NIM / Nemotron** ([build.nvidia.com](https://build.nvidia.com)) — free
+`nvapi-` key (1000 credits, 40 req/min, no card), OpenAI-compatible:
+```powershell
+setx NVIDIA_API_KEY "nvapi-your_key_here" # restart shell after
+# config.py:  INFERENCE_BACKEND = "nvidia"
+#   model options (NVIDIA_MODEL):
+#     nvidia/nemotron-3-nano-30b-a3b     (fast)
+#     nvidia/nemotron-3-super-120b-a12b  (best accuracy, default)
+#     nvidia/nemotron-3-ultra-550b-a55b  (largest)
+```
+
+Both cloud backends share one `OpenAICompatibleProvider` behind the inference
+seam, so adding others (OpenRouter, etc.) is a one-line preset.
 
 ## Hardware notes
 First-token latency depends heavily on your GPU/RAM. On a 2 GB MX350 / 8 GB RAM

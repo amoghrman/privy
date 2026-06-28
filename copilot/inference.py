@@ -103,26 +103,28 @@ class OllamaInferenceProvider(InferenceProvider):
                     return
 
 
-class GroqInferenceProvider(InferenceProvider):
-    """Cloud provider (opt-in): OpenAI-compatible streaming over Groq.
+class OpenAICompatibleProvider(InferenceProvider):
+    """Cloud provider (opt-in): OpenAI-compatible streaming chat completions.
 
-    Higher accuracy than the local model, but the transcript leaves the device.
-    Requires an API key in the configured environment variable.
+    Works for any OpenAI-compatible endpoint — Groq and NVIDIA NIM (Nemotron)
+    are just different (base_url, model, key) presets. Higher accuracy than the
+    local model, but the transcript leaves the device. Requires an API key in
+    the given environment variable.
     """
 
-    def __init__(self) -> None:
-        self.base = config.GROQ_API_BASE
-        self.model = config.GROQ_MODEL
-        self.api_key = os.environ.get(config.GROQ_API_KEY_ENV, "")
+    def __init__(self, name: str, base: str, model: str, key_env: str, signup: str) -> None:
+        self.name = name
+        self.base = base
+        self.model = model
+        self.api_key = os.environ.get(key_env, "")
         if not self.api_key:
             raise RuntimeError(
-                f"{config.GROQ_API_KEY_ENV} is not set. Get a free key at "
-                f"https://console.groq.com and set it, e.g.\n"
-                f'  setx {config.GROQ_API_KEY_ENV} "gsk_...".'
+                f"{key_env} is not set. Get a free key at {signup} and set it, "
+                f'e.g.  setx {key_env} "your_key_here"  (then restart the shell).'
             )
 
     def warmup(self) -> str | None:
-        return f"Cloud LLM (Groq): {self.model}"
+        return f"Cloud LLM ({self.name}): {self.model}"
 
     def stream(
         self, system: str, user: str, cancelled: Callable[[], bool]
@@ -151,15 +153,25 @@ class GroqInferenceProvider(InferenceProvider):
                 data = line[len("data:"):].strip()
                 if data == "[DONE]":
                     return
-                delta = json.loads(data)["choices"][0]["delta"].get("content", "")
+                choices = json.loads(data).get("choices") or [{}]
+                delta = choices[0].get("delta", {}).get("content", "")
                 if delta:
                     yield delta
 
 
 def make_provider() -> InferenceProvider:
     """Pick the inference backend from config (Ollama local by default)."""
-    if config.INFERENCE_BACKEND == "groq":
-        return GroqInferenceProvider()
+    backend = config.INFERENCE_BACKEND
+    if backend == "groq":
+        return OpenAICompatibleProvider(
+            "Groq", config.GROQ_API_BASE, config.GROQ_MODEL,
+            config.GROQ_API_KEY_ENV, "https://console.groq.com",
+        )
+    if backend == "nvidia":
+        return OpenAICompatibleProvider(
+            "NVIDIA NIM", config.NVIDIA_API_BASE, config.NVIDIA_MODEL,
+            config.NVIDIA_API_KEY_ENV, "https://build.nvidia.com",
+        )
     return OllamaInferenceProvider()
 
 
